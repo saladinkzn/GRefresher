@@ -1,0 +1,11 @@
+buildscript {
+    repositories {
+        mavenLocal()
+    }
+
+    dependencies {
+        classpath "ru.shadam.revolver:gradle-revolver:0.1-SNAPSHOT"
+    }
+}
+
+apply plugin: 'ru.shadam.revolver'
