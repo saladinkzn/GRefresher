@@ -13,6 +13,6 @@ class GreetingPluginTest {
         Project project = ProjectBuilder.builder().build()
         project.apply plugin: 'ru.shadam.revolver'
 
-        Assert.assertTrue(project.tasks.hello instanceof RevolverTask)
+        Assert.assertTrue(project.tasks.'re-run' instanceof RevolverTask)
     }
 }

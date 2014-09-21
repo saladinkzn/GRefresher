@@ -1,19 +1,26 @@
-apply plugin: 'groovy'
-apply plugin: 'maven'
 
-group = 'ru.shadam.revolver'
-version = '0.1-SNAPSHOT'
 
-repositories {
+subprojects {
+  group = 'ru.shadam.revolver'
+  version = '0.1-SNAPSHOT'
+
+  repositories {
+    mavenLocal()
     mavenCentral()
+  }
+
+  apply plugin: 'groovy'
+  apply plugin: 'maven'
 }
 
-dependencies {
-	compile gradleApi()
-	compile localGroovy()
+project(':libs:revolver') {
+  dependencies {
+    compile gradleApi()
+    compile localGroovy()
     testCompile 'junit:junit:4.11'
+  }
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '2.0'
+	gradleVersion = '2.1'
 }
