@@ -9,10 +9,13 @@ import org.gradle.tooling.GradleConnector
 class RevolverTask extends DefaultTask {
   @TaskAction
   def hello() {
-    String mainClassName = project.getProperties()['mainClassName']
+    String mainClassName = project.revolver.mainClassName
+    List<String> jvmArgs = project.revolver.jvmArgs ?: []
+    Map<String, String> systemProperties = project.revolver.systemProperties ?: [:]
+    //
     logger.info "mainClassName: ${mainClassName}"
     //
-    def proc = startProcess(mainClassName)
+    def proc = startProcess(mainClassName, jvmArgs, systemProperties)
     while (true) {
       System.out.println 'Press q to stop the application or any other key to restart'
       def input = System.in.read()
@@ -29,17 +32,16 @@ class RevolverTask extends DefaultTask {
       } finally {
         connection.close()
       }
-      proc = startProcess(mainClassName);
+      proc = startProcess(mainClassName, jvmArgs, systemProperties);
     }
   }
 
-  private Process startProcess(String mainClassName) {
+  private Process startProcess(String mainClassName, List<String> jvmArgs, Map<String, String> systemPropeties) {
     String javaExe = isWindows() ? 'java.exe' : 'java'
     String javaPath = new File(System.getProperty("java.home"), "bin/$javaExe").absolutePath
     def classPath = getRunnerClassPath()
     classPath = classPath.collect { it.absolutePath }.join(System.getProperty('path.separator'))
-    def procParams = [javaPath] + ['-cp', classPath, mainClassName]
-//    Process proc = procParams.execute()
+    def procParams = [javaPath] + jvmArgs + systemPropeties.collect { k,v -> "-D$k=$v" } + ['-cp', classPath, mainClassName]
     def proc = ProcessBuilder.newInstance()
             .command(procParams as List<String>)
             .redirectOutput(ProcessBuilder.Redirect.INHERIT)

@@ -8,9 +8,6 @@ import org.gradle.api.Project
  */
 class RevolverPlugin implements Plugin<Project> {
     void apply(Project project) {
-        if(!project.plugins.hasPlugin('application')) {
-            throw new IllegalStateException('Application plugin is not applied')
-        }
         project.extensions.create("revolver", RevolverPluginExtension)
         project.task('re-run', type: RevolverTask) {
             dependsOn 'classes'
@@ -18,6 +15,3 @@ class RevolverPlugin implements Plugin<Project> {
     }
 }
 
-class RevolverPluginExtension {
-
-}
