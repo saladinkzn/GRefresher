@@ -17,7 +17,8 @@ class GRefresherTask extends DefaultTask {
     //
     logger.info "mainClassName: ${mainClassName}"
     //
-    System.out.println 'Press any key to restart'
+    def hint = 'Press \'q\' or \'Q\' to stop application or any other key to restart'
+    System.out.println hint
     def startThread = startProcess(mainClassName, jvmArgs, systemProperties);
     infinite:
     while (true){
@@ -26,15 +27,13 @@ class GRefresherTask extends DefaultTask {
         //
         if(input >= 0) {
           char c = (char)input
-          if(c == '\n') {
-            logger.debug "Got restart command: ${(char)input}!"
-            //
-            logger.debug 'Destroying process'
+          if(c == 'q' || c == 'Q') {
             process.destroy()
-            logger.debug 'Joining running thread'
             startThread.join()
-            logger.debug 'Running thread joined'
-            //
+            break infinite
+          } else {
+            process.destroy()
+            startThread.join()
             // calling rebuild
             def connection = GradleConnector.newConnector().useInstallation(project.gradle.gradleHomeDir).forProjectDirectory(project.projectDir).connect()
             try {
@@ -43,28 +42,23 @@ class GRefresherTask extends DefaultTask {
               connection.close()
             }
             startThread = startProcess(mainClassName, jvmArgs, systemProperties);
-
-
-            dumpInput()
+            System.out.println hint
+            // Dumping input
+            while (System.in.available() > 0) {
+              long available = System.in.available()
+              for (int i = 0; i < available; i++) {
+                if (System.in.read() == -1) {
+                  break
+                }
+              }
+            }
           }
         }
-
       }
       Thread.sleep(500)
     }
   }
 
-  private static void dumpInput() {
-    // dumping other input
-    while (System.in.available() > 0) {
-      long available = System.in.available()
-      for (int i = 0; i < available; i++) {
-        if (System.in.read() == -1) {
-          break
-        }
-      }
-    }
-  }
 
   private Thread startProcess(String mainClassName, List<String> jvmArgs, Map<String, String> systemProperties) {
     Thread.start {
