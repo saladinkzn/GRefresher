@@ -11,15 +11,13 @@ class GRefresherTask extends DefaultTask {
 
   @TaskAction
   def hello() {
-    String mainClassName = project."${GRefresherPlugin.GREFRESHER_EXTENSION}".mainClassName
-    List<String> jvmArgs = project."${GRefresherPlugin.GREFRESHER_EXTENSION}".jvmArgs ?: []
-    Map<String, String> systemProperties = project."${GRefresherPlugin.GREFRESHER_EXTENSION}".systemProperties ?: [:]
+    GRefresherConfig config = project."${GRefresherPlugin.GREFRESHER_EXTENSION}".config
     //
-    logger.info "mainClassName: ${mainClassName}"
+    logger.info "mainClassName: ${config.mainClassName}"
     //
     def hint = 'Press \'q\' or \'Q\' to stop application or any other key to restart'
     System.out.println hint
-    def startThread = startProcess(mainClassName, jvmArgs, systemProperties);
+    def startThread = startProcess(config)
     infinite:
     while (true){
       while (System.in.available() > 0) {
@@ -41,7 +39,7 @@ class GRefresherTask extends DefaultTask {
             } finally {
               connection.close()
             }
-            startThread = startProcess(mainClassName, jvmArgs, systemProperties);
+            startThread = startProcess(config)
             System.out.println hint
             // Dumping input
             while (System.in.available() > 0) {
@@ -60,14 +58,23 @@ class GRefresherTask extends DefaultTask {
   }
 
 
-  private Thread startProcess(String mainClassName, List<String> jvmArgs, Map<String, String> systemProperties) {
+  private Thread startProcess(GRefresherConfig config) {
     Thread.start {
       logger.debug 'Starting new process'
       String javaExe = isWindows() ? 'java.exe' : 'java'
       String javaPath = new File(System.getProperty("java.home"), "bin/$javaExe").absolutePath
+      //
+      List<String> debugArg
+      if(config.debug) {
+        debugArg = ["-Xrunjdwp:transport=dt_socket,server=y,suspend=${config.debugSuspend ? 'y' : 'n'},address=${config.debugPort}".toString()]
+      } else {
+        debugArg = []
+      }
+      //
       def classPath = getRunnerClassPath()
       classPath = classPath.collect { it.absolutePath }.join(System.getProperty('path.separator'))
-      def procParams = [javaPath] + jvmArgs + systemProperties.collect { k, v -> "-D$k=$v" } + ['-cp', classPath, mainClassName]
+      //
+      def procParams = [javaPath] + debugArg + config.jvmArgs + config.systemProperties.collect { k, v -> "-D$k=$v" } + ['-cp', classPath, config.mainClassName]
       process = ProcessBuilder.newInstance()
               .command(procParams as List<String>)
               .redirectOutput(ProcessBuilder.Redirect.INHERIT)
