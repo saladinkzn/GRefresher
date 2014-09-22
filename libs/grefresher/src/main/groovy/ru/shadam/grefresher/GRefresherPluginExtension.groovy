@@ -1,9 +1,9 @@
-package ru.shadam.revolver
+package ru.shadam.grefresher
 
 /**
  * @author sala
  */
-class RevolverPluginExtension {
+class GRefresherPluginExtension {
   String mainClassName
   List<String> jvmArgs
   Map<String, String> systemProperties

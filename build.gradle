@@ -1,7 +1,7 @@
 
 
 subprojects {
-  group = 'ru.shadam.revolver'
+  group = 'ru.shadam.grefresher'
   version = '0.1-SNAPSHOT'
 
   repositories {
@@ -13,7 +13,7 @@ subprojects {
   apply plugin: 'maven'
 }
 
-project(':libs:revolver') {
+project(':libs:grefresher') {
   dependencies {
     compile gradleApi()
     compile localGroovy()
