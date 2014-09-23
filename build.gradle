@@ -1,26 +1,111 @@
+buildscript {
+  repositories {
+    jcenter()
+  }
 
+  dependencies {
+    classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:0.4'
+    classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:3.0.1'
+  }
+}
 
-subprojects {
-  group = 'ru.shadam.grefresher'
-  version = '0.1-SNAPSHOT'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.artifactory'
+
+group = 'ru.shadam.grefresher'
+version = '0.1-SNAPSHOT'
+def rootProject = project
+
+if(!project.hasProperty('bintrayUser')) {
+  ext.bintrayUser = ''
+}
+
+if(!project.hasProperty('bintrayKey')) {
+  ext.bintrayKey = ''
+}
+
+project(':libs:grefresher') {
+  group = rootProject.group
+  version = rootProject.version
+  apply plugin: 'com.jfrog.artifactory'
 
   repositories {
     mavenLocal()
     mavenCentral()
   }
 
-  apply plugin: 'groovy'
-  apply plugin: 'maven'
-}
-
-project(':libs:grefresher') {
   dependencies {
     compile gradleApi()
     compile localGroovy()
     testCompile 'junit:junit:4.11'
   }
+
+  apply plugin: 'groovy'
+  apply plugin: 'maven'
+  apply plugin: 'maven-publish'
+
+  // install is called after build
+  project.tasks.build.finalizedBy project.tasks.install
+
+  task sourcesJar(type: Jar, dependsOn: classes, description: 'Creates sources jar') {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+  }
+
+  task javadocJar(type: Jar, description: 'Creates javadoc jar') {
+    dependsOn javadoc
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+    if(tasks.findByName('groovydoc')) {
+      dependsOn groovydoc
+      from groovydoc.destinationDir
+    }
+  }
+
+  artifacts {
+    archives sourcesJar, javadocJar
+  }
+
+  publishing {
+    publications {
+      mavenJava(MavenPublication) {
+        from components.java
+
+        artifact sourcesJar {
+          classifier 'sources'
+        }
+
+        artifact javadocJar {
+          classifier "javadoc"
+        }
+      }
+    }
+  }
 }
 
 task wrapper(type: Wrapper) {
 	gradleVersion = '2.1'
+}
+
+// oss.jfrog.org artifactory repository
+artifactory {
+  contextUrl = 'https://oss.jfrog.org/artifactory'
+  publish {
+    repository {
+      if (project.version.endsWith('-SNAPSHOT'))
+        repoKey = 'oss-snapshot-local'
+      else
+        repoKey = 'oss-release-local'
+      username = project.bintrayUser
+      password = project.bintrayKey
+    }
+    defaults {
+      publications 'mavenJava'
+    }
+  }
+  resolve {
+    repository {
+      repoKey = 'repo'
+    }
+  }
 }
