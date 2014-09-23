@@ -9,6 +9,12 @@ buildscript {
   }
 }
 
+ext {
+  project_website = "https://github.com/${developerId}/${projectId}"
+  project_scm = "scm:git@github.com:${developerId}/${projectId}.git"
+  license_url = "https://raw.github.com/${developerId}/${projectId}/master/LICENSE"
+}
+
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.artifactory'
 
@@ -27,6 +33,8 @@ if(!project.hasProperty('bintrayKey')) {
 project(':libs:grefresher') {
   group = rootProject.group
   version = rootProject.version
+  apply plugin: 'groovy'
+  apply plugin: 'maven-publish'
   apply plugin: 'com.jfrog.artifactory'
 
   repositories {
@@ -40,12 +48,8 @@ project(':libs:grefresher') {
     testCompile 'junit:junit:4.11'
   }
 
-  apply plugin: 'groovy'
-  apply plugin: 'maven'
-  apply plugin: 'maven-publish'
-
   // install is called after build
-  project.tasks.build.finalizedBy project.tasks.install
+  project.tasks.build.finalizedBy project.tasks.publishToMavenLocal
 
   task sourcesJar(type: Jar, dependsOn: classes, description: 'Creates sources jar') {
     classifier = 'sources'
@@ -69,6 +73,34 @@ project(':libs:grefresher') {
   publishing {
     publications {
       mavenJava(MavenPublication) {
+        pom.withXml {
+          asNode().with {
+            appendNode('name', rootProject.name)
+            appendNode('packaging', 'jar')
+            appendNode('description', rootProject.description)
+            appendNode('url', rootProject.project_website)
+            appendNode('scm').with {
+              appendNode('url', rootProject.project_scm)
+              appendNode('connection', rootProject.project_scm)
+              appendNode('developerConnection', rootProject.project_scm)
+            }
+            appendNode('licenses').with {
+              appendNode('license').with {
+                appendNode('name', rootProject.license)
+                appendNode('url', rootProject.license_url)
+                appendNode('distribution', 'repo')
+              }
+            }
+            appendNode('developers').with {
+              appendNode('developer').with {
+                appendNode('id', rootProject.developerId)
+                appendNode('name', rootProject.developerName)
+              }
+            }
+            it
+          }
+        }
+
         from components.java
 
         artifact sourcesJar {
