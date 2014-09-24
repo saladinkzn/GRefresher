@@ -3,7 +3,6 @@ import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Assert
 import org.junit.Test
 import ru.shadam.grefresher.GRefresherTask
-
 /**
  * @author sala
  */

@@ -1,10 +1,8 @@
 package ru.shadam.grefresher
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
-import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.tasks.TaskAction
 import org.gradle.tooling.GradleConnector
-
 /**
  * @author sala
  */
@@ -81,8 +79,8 @@ class GRefresherTask extends DefaultTask {
     }
     def collectSourceSets
     collectSourceSets = { Project p ->
-      List<Project> projects = p.configurations['compile'].dependencies.withType(ProjectDependency).collect { it.dependencyProject }
-      return p.sourceSets.main.allSource.srcDirs + projects.collect({ collectSourceSets(it) }).flatten()
+      List<Project> projects = ProjectUtils.getDependencyProjects(p, 'compile')
+      return p.sourceSets.main.allSource.srcDirs + projects.collect({ collectSourceSets(it)}).flatten()
     }
     def sourceSets = collectSourceSets(project)
     sourceSets.each {
