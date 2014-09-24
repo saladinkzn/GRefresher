@@ -19,7 +19,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.artifactory'
 
 group = 'ru.shadam.grefresher'
-version = '0.1-SNAPSHOT'
+version = '0.2-SNAPSHOT'
 def rootProject = project
 
 if(!project.hasProperty('bintrayUser')) {
