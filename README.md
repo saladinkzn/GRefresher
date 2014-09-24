@@ -2,6 +2,8 @@ GRefresher
 ===============
 
 [![Build Status](https://travis-ci.org/saladinkzn/GRefresher.svg?branch=master)](https://travis-ci.org/saladinkzn/GRefresher)
+[![Release](http://img.shields.io/badge/release-0.1-47b31f.svg)](https://github.com/saladinkzn/GRefresher/releases/latest)
+[![Snapshot](http://img.shields.io/badge/current-0.2--SNAPSHOT-47b31f.svg)](https://github.com/saladinkzn/GRefresher/tree/master)
 [![License](http://img.shields.io/badge/license-MIT-47b31f.svg)](#copyright-and-license)
 
 Gradle plugin inspired by sbt-revolver. It provides *re-run* task which improves development turnaround by recompiling
@@ -19,14 +21,31 @@ Gradle 2.1+, Java 1.7+
 -----------------
 To get started you should add following snippet to your `build.gradle`
 
+##### Release:
+
 ```groovy
 buildscript {
     repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'ru.shadam.grefresher:grefresher:0.1'
+    }
+}
+```
+
+##### Snapshot:
+
+```groovy
+buildscript {
+    repositories {
+        // .. your preferred repos: mavenCentral() or jcenter() or some else (at least one is required for plugin's dependencies)
         maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local' }
     }
 
     dependencies {
-        classpath 'ru.shadam.grefresher:grefresher:0.1-SNAPSHOT'
+        classpath 'ru.shadam.grefresher:grefresher:0.2-SNAPSHOT'
     }
 }
 
