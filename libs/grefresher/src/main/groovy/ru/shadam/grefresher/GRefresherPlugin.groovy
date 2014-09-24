@@ -15,7 +15,7 @@ class GRefresherPlugin implements Plugin<Project> {
               'ru.shadam.grefresher',
               'grefresher'
       )
-      def motd = "You running GRefresher v.${version}"
+      def motd = "You're running GRefresher v.${version}"
       project.extensions.create(GREFRESHER_EXTENSION, GRefresherPluginExtension)
       project.task('re-run', type: GRefresherTask, group: 'GRefresher') {
         description = 'Runs project in triggered restart mode'
