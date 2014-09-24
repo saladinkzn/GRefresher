@@ -11,4 +11,6 @@ class GRefresherConfig {
   String mainClassName = null
   List<String> jvmArgs = []
   Map<String, String> systemProperties = [:]
+  //
+  Integer scanInterval = 1
 }

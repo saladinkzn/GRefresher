@@ -48,6 +48,7 @@ project(':libs:grefresher') {
   dependencies {
     compile gradleApi()
     compile localGroovy()
+    compile('org.eclipse.jetty:jetty-util:9.2.3.v20140905')
     testCompile 'junit:junit:4.11'
   }
 

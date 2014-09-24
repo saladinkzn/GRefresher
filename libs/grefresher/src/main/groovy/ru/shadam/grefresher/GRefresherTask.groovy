@@ -1,5 +1,7 @@
 package ru.shadam.grefresher
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.tasks.TaskAction
 import org.gradle.tooling.GradleConnector
 
@@ -8,6 +10,7 @@ import org.gradle.tooling.GradleConnector
  */
 class GRefresherTask extends DefaultTask {
   volatile Process process
+  volatile Thread runningThread
 
   @TaskAction
   def hello() {
@@ -17,46 +20,74 @@ class GRefresherTask extends DefaultTask {
     //
     def hint = 'Press \'q\' or \'Q\' to stop application or any other key to restart'
     System.out.println hint
-    def startThread = startProcess(config)
-    infinite:
-    while (true){
-      while (System.in.available() > 0) {
-        def input = System.in.read()
-        //
-        if(input >= 0) {
-          char c = (char)input
-          if(c == 'q' || c == 'Q') {
-            process.destroy()
-            startThread.join()
-            break infinite
-          } else {
-            process.destroy()
-            startThread.join()
-            // calling rebuild
-            def connection = GradleConnector.newConnector().useInstallation(project.gradle.gradleHomeDir).forProjectDirectory(project.projectDir).connect()
-            try {
-              connection.newBuild().forTasks('classes').run()
-            } finally {
-              connection.close()
-            }
-            startThread = startProcess(config)
-            System.out.println hint
-            // Dumping input
-            while (System.in.available() > 0) {
-              long available = System.in.available()
-              for (int i = 0; i < available; i++) {
-                if (System.in.read() == -1) {
-                  break
+    runningThread = startProcess(config)
+    ScannerManager scannerManager = getScannerManager(config)
+    try {
+      scannerManager?.start()
+      infinite:
+      while (true) {
+        while (System.in.available() > 0) {
+          def input = System.in.read()
+          //
+          if (input >= 0) {
+            char c = (char) input
+            if (c == 'q' || c == 'Q') {
+              process.destroy()
+              runningThread.join()
+              break infinite
+            } else {
+              restartApplication(config)
+              System.out.println hint
+              // Dumping input
+              while (System.in.available() > 0) {
+                long available = System.in.available()
+                for (int i = 0; i < available; i++) {
+                  if (System.in.read() == -1) {
+                    break
+                  }
                 }
               }
             }
           }
         }
+        Thread.sleep(500)
       }
-      Thread.sleep(500)
+    } finally {
+      scannerManager.stop()
     }
   }
 
+  synchronized def restartApplication(GRefresherConfig config) {
+    process.destroy()
+    runningThread.join()
+    // calling rebuild
+    def connection = GradleConnector.newConnector().useInstallation(project.gradle.gradleHomeDir).forProjectDirectory(project.projectDir).connect()
+    try {
+      connection.newBuild().forTasks('classes').run()
+    } finally {
+      connection.close()
+    }
+    runningThread = startProcess(config)
+  }
+
+  private ScannerManager getScannerManager(GRefresherConfig config) {
+    if(!config.scanInterval) {
+      logger.warn "config.scanInterval = ${config.scanInterval}. Scanning disabled!"
+      return null
+    }
+    def collectSourceSets
+    collectSourceSets = { Project p ->
+      List<Project> projects = p.configurations['compile'].dependencies.withType(ProjectDependency).collect { it.dependencyProject }
+      return p.sourceSets.main.allSource.srcDirs + projects.collect({ collectSourceSets(it) }).flatten()
+    }
+    def sourceSets = collectSourceSets(project)
+    sourceSets.each {
+      logger.debug "Collected sourceDir: ${it}"
+    }
+    return new ScannerManager(sourceSets as List<File>, config.scanInterval, {
+      restartApplication(config)
+    })
+  }
 
   private Thread startProcess(GRefresherConfig config) {
     Thread.start {
@@ -89,6 +120,10 @@ class GRefresherTask extends DefaultTask {
     (project.sourceSets.main.output + project.configurations['compile']).files
   }
 
+  /**
+   * @author akhikhl
+   * @return Checks if current OS is windows
+   */
   static boolean isWindows() {
     System.getProperty('os.name', 'generic').toLowerCase().indexOf('win') >= 0
   }
