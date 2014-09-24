@@ -4,7 +4,7 @@ buildscript {
   }
 
   dependencies {
-    classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:0.4'
+    classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:0.5'
     classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:3.0.1'
   }
 }
@@ -36,6 +36,7 @@ project(':libs:grefresher') {
   apply plugin: 'groovy'
   apply plugin: 'maven-publish'
   apply plugin: 'com.jfrog.artifactory'
+  apply plugin: 'com.jfrog.bintray'
   
   sourceCompatibility = '1.7'
   targetCompatibility = '1.7'
@@ -117,6 +118,24 @@ project(':libs:grefresher') {
       }
     }
   }
+
+  bintray {
+    user = rootProject.bintrayUser
+    key = rootProject.bintrayKey
+
+    publications = ['mavenJava']
+    dryRun = false
+    publish = true
+    pkg {
+      repo = 'maven'
+      name = rootProject.projectId
+      desc = rootProject.description
+      licenses = [ rootProject.license ]
+      // labels [ rootProject.projectLabels.split(',') ]
+    }
+  }
+
+  bintrayUpload.dependsOn assemble
 }
 
 task wrapper(type: Wrapper) {
