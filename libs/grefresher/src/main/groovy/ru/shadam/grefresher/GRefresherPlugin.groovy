@@ -10,10 +10,11 @@ class GRefresherPlugin implements Plugin<Project> {
   public static final String GREFRESHER_EXTENSION = 'grefresher'
 
     void apply(Project project) {
-        project.extensions.create(GREFRESHER_EXTENSION, GRefresherPluginExtension)
-        project.task('re-run', type: GRefresherTask) {
-            dependsOn 'classes'
-        }
+      project.extensions.create(GREFRESHER_EXTENSION, GRefresherPluginExtension)
+      project.task('re-run', type: GRefresherTask, group: 'GRefresher') {
+        description = 'Runs project in triggered restart mode'
+        dependsOn 'classes'
+      }
     }
 }
 

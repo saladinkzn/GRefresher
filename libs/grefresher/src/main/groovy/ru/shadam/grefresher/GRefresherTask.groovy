@@ -16,6 +16,10 @@ class GRefresherTask extends DefaultTask {
   def hello() {
     GRefresherConfig config = project."${GRefresherPlugin.GREFRESHER_EXTENSION}".config
     //
+    if(!config.mainClassName) {
+      throw new IllegalStateException('mainClassName was not specified')
+    }
+    //
     logger.info "mainClassName: ${config.mainClassName}"
     //
     def hint = 'Press \'q\' or \'Q\' to stop application or any other key to restart'
