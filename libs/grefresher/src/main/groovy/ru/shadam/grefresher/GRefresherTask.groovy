@@ -94,7 +94,7 @@ class GRefresherTask extends DefaultTask {
   private Thread startProcess(GRefresherConfig config) {
     Thread.start {
       logger.debug 'Starting new process'
-      String javaExe = isWindows() ? 'java.exe' : 'java'
+      String javaExe = PlatformUtils.isWindows() ? 'java.exe' : 'java'
       String javaPath = new File(System.getProperty("java.home"), "bin/$javaExe").absolutePath
       //
       List<String> debugArg
@@ -120,13 +120,5 @@ class GRefresherTask extends DefaultTask {
 
   protected Collection<File> getRunnerClassPath() {
     (project.sourceSets.main.output + project.configurations['compile']).files
-  }
-
-  /**
-   * @author akhikhl
-   * @return Checks if current OS is windows
-   */
-  static boolean isWindows() {
-    System.getProperty('os.name', 'generic').toLowerCase().indexOf('win') >= 0
   }
 }

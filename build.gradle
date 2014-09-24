@@ -49,6 +49,7 @@ project(':libs:grefresher') {
   dependencies {
     compile gradleApi()
     compile localGroovy()
+    compile 'org.codehaus.groovy:groovy-backports-compat23:2.3.6'
     compile('org.eclipse.jetty:jetty-util:9.2.3.v20140905')
     testCompile 'junit:junit:4.11'
   }
@@ -132,6 +133,9 @@ project(':libs:grefresher') {
       desc = rootProject.description
       licenses = [ rootProject.license ]
       // labels [ rootProject.projectLabels.split(',') ]
+      version {
+        attributes = [ 'gradle-plugin': 'ru.shadam.grefresher:ru.shadam.grefresher:grefresher' ]
+      }
     }
   }
 

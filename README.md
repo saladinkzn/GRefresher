@@ -15,7 +15,7 @@ and restarting program in single click.
 
 #### Requirements
 ----------------
-Gradle 2.1+, Java 1.7+
+Gradle 1.12+ (tested on 1.12, but may be supported by earlier versions), Java 1.7+
 
 #### Getting Started
 -----------------
