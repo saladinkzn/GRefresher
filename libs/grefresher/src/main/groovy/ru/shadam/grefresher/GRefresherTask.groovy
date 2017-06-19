@@ -1,14 +1,25 @@
 package ru.shadam.grefresher
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.internal.file.FileResolver
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.internal.ExecHandle
+import org.gradle.process.internal.JavaExecHandleBuilder
 import org.gradle.tooling.GradleConnector
+
+import javax.inject.Inject
 /**
  * @author sala
  */
 class GRefresherTask extends DefaultTask {
-  volatile Process process
+  volatile ExecHandle execHandle
   volatile Thread runningThread
+
+  @Inject
+  protected FileResolver getFileResolver() {
+    throw new UnsupportedOperationException();
+  }
 
   @TaskAction
   def hello() {
@@ -34,7 +45,7 @@ class GRefresherTask extends DefaultTask {
           if (input >= 0) {
             char c = (char) input
             if (c == 'q' || c == 'Q') {
-              process.destroy()
+              execHandle.abort()
               runningThread.join()
               break infinite
             } else {
@@ -60,7 +71,7 @@ class GRefresherTask extends DefaultTask {
   }
 
   synchronized def restartApplication(GRefresherConfig config) {
-    process.destroy()
+    execHandle.abort()
     runningThread.join()
     // calling rebuild
     def connection = GradleConnector.newConnector().useInstallation(project.gradle.gradleHomeDir).forProjectDirectory(project.projectDir).connect()
@@ -93,32 +104,22 @@ class GRefresherTask extends DefaultTask {
 
   private Thread startProcess(GRefresherConfig config) {
     Thread.start {
-      logger.debug 'Starting new process'
-      String javaExe = PlatformUtils.isWindows() ? 'java.exe' : 'java'
-      String javaPath = new File(System.getProperty("java.home"), "bin/$javaExe").absolutePath
-      //
-      List<String> debugArg
-      if(config.debug) {
-        debugArg = ["-Xrunjdwp:transport=dt_socket,server=y,suspend=${config.debugSuspend ? 'y' : 'n'},address=${config.debugPort}".toString()]
-      } else {
-        debugArg = []
-      }
-      //
-      def classPath = getRunnerClassPath()
-      classPath = classPath.collect { it.absolutePath }.join(System.getProperty('path.separator'))
-      //
-      def procParams = [javaPath] + debugArg + config.jvmArgs + config.systemProperties.collect { k, v -> "-D$k=$v" } + ['-cp', classPath, config.mainClassName]
-      process = ProcessBuilder.newInstance()
-              .command(procParams as List<String>)
-              .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-              .redirectError(ProcessBuilder.Redirect.INHERIT)
-              .start()
-      process.waitFor()
-      logger.debug 'Process stopped'
-    }
-  }
+      JavaExecHandleBuilder defaultJavaExecAction = new JavaExecHandleBuilder(getFileResolver())
 
-  protected Collection<File> getRunnerClassPath() {
-    (project.sourceSets.main.output + project.configurations['compile']).files
+      if (config.debug) {
+        defaultJavaExecAction.jvmArgs("-Xrunjdwp:transport=dt_socket,server=y,suspend=${config.debugSuspend ? 'y' : 'n'},address=${config.debugPort}".toString())
+      }
+
+      defaultJavaExecAction.main = config.mainClassName
+      defaultJavaExecAction.classpath = project.sourceSets.main.runtimeClasspath
+      config.systemProperties.each {
+        defaultJavaExecAction.systemProperties.put(it.key, it.value)
+      }
+      defaultJavaExecAction.jvmArgs(config.jvmArgs)
+
+      execHandle = defaultJavaExecAction.build()
+      execHandle.start().waitForFinish()
+      logger.debug('Process stopped')
+    }
   }
 }
